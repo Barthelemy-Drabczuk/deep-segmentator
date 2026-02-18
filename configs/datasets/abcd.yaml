@@ -1,0 +1,9 @@
+# ABCD (Adolescent Brain Cognitive Development) dataset configuration
+root_dir: /data/abcd
+dataset_name: abcd
+num_classes: 41
+modality: T1w
+age_range: [9, 11]
+n_subjects: 2500
+multi_vendor: true
+metadata_csv: /data/abcd/participants.csv

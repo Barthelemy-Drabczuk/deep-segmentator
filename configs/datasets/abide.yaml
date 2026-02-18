@@ -1,0 +1,10 @@
+# ABIDE (Autism Brain Imaging Data Exchange) dataset configuration
+root_dir: /data/abide
+dataset_name: abide
+num_classes: 41
+modality: T1w
+age_range: [7, 64]
+n_subjects: 1100
+clinical: true
+diagnoses: [ASD, control]
+metadata_csv: /data/abide/participants.csv

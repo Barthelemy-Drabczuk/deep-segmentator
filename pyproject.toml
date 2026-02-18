@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sulcal-seg"
+version = "1.0.0"
+description = "Lifespan-robust sulcal segmentation via Evolutionary Architecture Search, multi-label GAN, and Laplace geometry constraints"
+authors = [{ name = "Barthélémy Drabczuk", email = "barthelemy.drabczuk@cea.fr" }]
+license = { text = "CeCILL" }
+readme = "README.md"
+requires-python = ">=3.10"
+
+[project.urls]
+Repository = "https://github.com/neurospin/sulcal_seg"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sulcal_seg"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+ignore_missing_imports = true
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]

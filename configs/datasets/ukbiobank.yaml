@@ -1,0 +1,13 @@
+# UKBioBank dataset configuration
+root_dir: /data/ukbiobank
+dataset_name: ukbiobank
+num_classes: 41
+modality: T1w
+scanner: Siemens_Skyra
+field_strength: 3T
+age_range: [40, 80]
+n_subjects: 40000
+metadata_csv: /data/ukbiobank/participants.csv
+image_pattern: "sub-{subject_id}/anat/sub-{subject_id}_T1w.nii.gz"
+morphologist_pattern: "sub-{subject_id}/labels/morphologist_labels.nii.gz"
+freesurfer_pattern: "sub-{subject_id}/labels/freesurfer_labels.nii.gz"

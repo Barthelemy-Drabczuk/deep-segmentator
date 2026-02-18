@@ -1,0 +1,41 @@
+# Ablation study configuration
+# Defines configs for all 7 ablation configurations
+
+eas:
+  population_size: 20
+  num_generations: 50
+  num_classes: 41
+  min_filters: 8
+  max_filters: 256
+  min_depth: 2
+  max_depth: 6
+  mutation_rate: 0.3
+  hosvd_rank_ratios: [0.7, 0.7, 0.7]
+  proxy_epochs: 5
+
+gan:
+  num_classes: 41
+  in_channels: 1
+  base_filters: 32
+  depth: 4
+  lambda_dice: 1.0
+  lambda_gan: 0.1
+  lambda_laplace: 0.05
+  gan_mode: lsgan
+  learning_rate_g: 0.0001
+  learning_rate_d: 0.0001
+
+laplace:
+  num_iterations: 30
+  lambda_smooth: 0.5
+  algorithm: taubin
+
+# Ablation names to run (subset of all 7 if desired)
+ablations_to_run:
+  - eas_only
+  - gan_only
+  - laplace_only
+  - eas_gan
+  - eas_laplace
+  - gan_laplace
+  - full

@@ -1,0 +1,31 @@
+# Full model configuration (EAS + GAN + Laplace)
+# Use with: python -m sulcal_seg.experiments.train_full --config configs/full_model.yaml
+
+eas:
+  population_size: 20
+  num_generations: 50
+  num_classes: 41
+  min_filters: 16
+  max_filters: 256
+  min_depth: 3
+  max_depth: 5
+  mutation_rate: 0.3
+  hosvd_rank_ratios: [0.7, 0.7, 0.7]
+  proxy_epochs: 5
+
+gan:
+  num_classes: 41
+  in_channels: 1
+  base_filters: 32
+  depth: 4
+  lambda_dice: 1.0
+  lambda_gan: 0.1
+  lambda_laplace: 0.05
+  gan_mode: lsgan
+  learning_rate_g: 0.0001
+  learning_rate_d: 0.0001
+
+laplace:
+  num_iterations: 30
+  lambda_smooth: 0.5
+  algorithm: taubin

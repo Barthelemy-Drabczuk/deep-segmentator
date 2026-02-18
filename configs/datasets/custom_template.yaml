@@ -1,0 +1,10 @@
+# Custom dataset template — copy and fill in your values
+root_dir: /path/to/your/data
+dataset_name: custom
+num_classes: 41  # including background
+modality: T1w
+# Add dataset-specific fields below:
+# metadata_csv: /path/to/participants.csv
+# image_pattern: "sub-{subject_id}/anat/sub-{subject_id}_T1w.nii.gz"
+# morphologist_pattern: "..."
+# freesurfer_pattern: "..."

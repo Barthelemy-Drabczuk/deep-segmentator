@@ -1,0 +1,11 @@
+# HPO configuration for full model optimisation
+study_name: sulcal_seg_full_hpo
+storage: outputs/hpo/sulcal_seg_full_hpo.db
+n_trials: 100
+direction: maximize
+n_jobs: 4
+seed: 42
+pruner: hyperband
+pruner_min_resource: 5
+pruner_max_resource: 50
+pruner_reduction_factor: 3

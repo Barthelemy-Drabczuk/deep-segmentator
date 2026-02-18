@@ -1,0 +1,72 @@
+# Master configuration for sulcal segmentation training
+# Matches sulcal_seg.config.base_config.TrainingConfig schema
+
+data:
+  root_dir: /data/sulcal
+  dataset_name: ukbiobank
+  num_classes: 41
+  train_split: 0.8
+  val_split: 0.1
+  test_split: 0.1
+  batch_size: 4
+  num_workers: 8
+  cache_data: true
+  augmentation: true
+
+eas:
+  population_size: 20
+  num_generations: 50
+  num_classes: 41
+  min_filters: 8
+  max_filters: 256
+  min_depth: 2
+  max_depth: 6
+  mutation_rate: 0.3
+  crossover_rate: 0.7
+  tournament_size: 4
+  hosvd_rank_ratios: [0.7, 0.7, 0.7]
+  hosvd_n_trials: 5
+  proxy_epochs: 5
+  elite_fraction: 0.2
+
+gan:
+  num_classes: 41
+  in_channels: 1
+  base_filters: 32
+  depth: 4
+  lambda_dice: 1.0
+  lambda_gan: 0.1
+  lambda_laplace: 0.05
+  gan_mode: lsgan
+  learning_rate_g: 0.0001
+  learning_rate_d: 0.0001
+  n_critic: 1
+  label_smoothing: 0.1
+  use_morphologist_labels: true
+  use_freesurfer_labels: true
+  entropy_threshold: 0.5
+  collapse_window: 10
+
+laplace:
+  num_iterations: 30
+  lambda_smooth: 0.5
+  algorithm: taubin
+  iso_threshold: 0.5
+  smooth_before_mesh: true
+  target_genus: 0
+  max_holes: 0
+  voxel_size_mm: 1.0
+
+training:
+  num_epochs: 100
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  scheduler: warmup_cosine
+  warmup_steps: 500
+  eta_min: 1.0e-6
+  early_stopping_patience: 15
+  checkpoint_dir: outputs/checkpoints
+  log_dir: outputs/logs
+  seed: 42
+  mixed_precision: true
+  gradient_clip_norm: 1.0

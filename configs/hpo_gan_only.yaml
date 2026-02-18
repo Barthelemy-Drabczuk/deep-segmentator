@@ -1,0 +1,10 @@
+# HPO configuration for GAN-only ablation
+study_name: sulcal_seg_gan_hpo
+storage: outputs/hpo/sulcal_seg_gan_hpo.db
+n_trials: 50
+direction: maximize
+n_jobs: 2
+seed: 42
+pruner: hyperband
+pruner_min_resource: 5
+pruner_max_resource: 50

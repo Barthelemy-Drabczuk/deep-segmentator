@@ -1,0 +1,9 @@
+# SENIOR dataset configuration (3T + 7T)
+root_dir: /data/senior
+dataset_name: senior
+num_classes: 41
+modality: T1w
+age_range: [60, 90]
+n_subjects: 142
+field_strengths: [3T, 7T]
+metadata_csv: /data/senior/participants.csv
