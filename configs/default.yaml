@@ -4,7 +4,7 @@
 data:
   root_dir: /data/sulcal
   dataset_name: ukbiobank
-  num_classes: 41
+  num_classes: 52
   train_split: 0.8
   val_split: 0.1
   test_split: 0.1
@@ -16,7 +16,7 @@ data:
 eas:
   population_size: 20
   num_generations: 50
-  num_classes: 41
+  num_classes: 52
   min_filters: 8
   max_filters: 256
   min_depth: 2
@@ -30,7 +30,7 @@ eas:
   elite_fraction: 0.2
 
 gan:
-  num_classes: 41
+  num_classes: 52
   in_channels: 1
   base_filters: 32
   depth: 4

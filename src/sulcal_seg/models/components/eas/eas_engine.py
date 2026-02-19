@@ -26,17 +26,9 @@ class EASEngine(BaseComponent):
     def __init__(self, config: Dict[str, Any]) -> None:
         super().__init__(config)
 
-        self.search_space = SearchSpace(
-            min_filters=config.get("min_filters", 8),
-            max_filters=config.get("max_filters", 256),
-            min_depth=config.get("min_depth", 2),
-            max_depth=config.get("max_depth", 6),
-            allowed_activations=config.get(
-                "allowed_activations", ["relu", "leaky_relu", "elu", "gelu"]
-            ),
-        )
+        self.search_space = SearchSpace(config)
         self.breeder = HOSVDBreeder(
-            rank_ratios=tuple(config.get("hosvd_rank_ratios", (0.7, 0.7, 0.7)))
+            rank_ratios=tuple(config.get("hosvd_rank_ratios", (0.8, 0.8)))
         )
         self.evaluator = FitnessEvaluator(config)
         self.population: List[ArchitectureGenome] = []

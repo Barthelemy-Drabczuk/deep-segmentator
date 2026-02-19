@@ -1,7 +1,81 @@
-COMPLETE_MODEL_SPECIFICATION_FOR_IMPLEMENTATION.md
-EXTENDED_STRATEGY_SENIOR_COHORT_MULTILABEL_GAN.md
-FINAL_SUMMARY_AND_CLAUDE_CODE_CHECKLIST.md
-OPTUNA_HPO_INTEGRATION_SPECIFICATION.md
-PRODUCTION_SPEC_PIXI_COOKIECUTTER_BUILDER_PATTERN.md
+# ── Claude / MCP ──────────────────────────────────────────────────────────────
 .mcp.json
-.claude
+.claude/
+CLAUDE_DOC/
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# ── Build / packaging ─────────────────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+MANIFEST
+
+# ── Virtual environments / Pixi ───────────────────────────────────────────────
+.venv/
+venv/
+env/
+.env
+.pixi/
+
+# ── Testing / coverage ────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+*.testmon
+
+# ── Type checkers / linters ───────────────────────────────────────────────────
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── PyTorch / ML artefacts ────────────────────────────────────────────────────
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+wandb/
+mlruns/
+lightning_logs/
+
+# ── Outputs & experiments ─────────────────────────────────────────────────────
+outputs/
+results/
+logs/
+
+# ── Data (never commit raw MRI data) ──────────────────────────────────────────
+data/
+*.nii
+*.nii.gz
+*.mgz
+*.mgh
+*.dcm
+*.hdf5
+*.h5
+*.arg
+
+# ── HPO / Optuna ──────────────────────────────────────────────────────────────
+*.db
+optuna_studies/
+
+# ── OS / editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/

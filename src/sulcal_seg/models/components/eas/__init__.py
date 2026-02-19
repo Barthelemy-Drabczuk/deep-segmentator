@@ -4,7 +4,12 @@
 from .eas_engine import EASEngine
 from .fitness_eval import FitnessEvaluator
 from .hosvd_breeder import HOSVDBreeder
-from .mutation_ops import change_activation, change_depth, change_filters, mutate, tournament_select
+from .mutation_ops import (
+    change_activation,
+    change_filters,
+    mutate,
+    tournament_select,
+)
 from .search_space import ArchitectureGenome, SearchSpace
 
 __all__ = [
@@ -16,6 +21,5 @@ __all__ = [
     "mutate",
     "change_filters",
     "change_activation",
-    "change_depth",
     "tournament_select",
 ]

@@ -1,25 +1,31 @@
-"""Mutation operators for architecture genomes."""
+"""Mutation operators for the 5-level architecture genome."""
 import random
 from typing import List, Optional
 
-from sulcal_seg.models.components.eas.search_space import ArchitectureGenome, SearchSpace
+from sulcal_seg.models.components.eas.search_space import (
+    NUM_LEVELS,
+    ArchitectureGenome,
+    _COL_CHANNELS,
+)
 
 
 def mutate(
     genome: ArchitectureGenome,
-    search_space: SearchSpace,
+    config: dict,
     mutation_rate: float = 0.3,
     rng: Optional[random.Random] = None,
 ) -> ArchitectureGenome:
     """
     Apply stochastic mutations to a genome.
 
-    Each mutation operator fires independently with probability `mutation_rate`.
+    Each mutation operator fires independently with probability
+    ``mutation_rate``.
 
     Args:
         genome: Source genome (not modified in-place).
-        search_space: Defines valid ranges; child will be clamped.
-        mutation_rate: Probability that each mutation fires.
+        config: Component config dict (provides ``allowed_activations``
+                and ``mutation_rate`` override if present).
+        mutation_rate: Probability that each operator fires.
         rng: Optional seeded Random instance for reproducibility.
 
     Returns:
@@ -28,34 +34,42 @@ def mutate(
     if rng is None:
         rng = random.Random()
 
+    rate = config.get("mutation_rate", mutation_rate)
+    allowed = config.get(
+        "allowed_activations", ["relu", "leaky_relu", "elu", "gelu"]
+    )
+
     child = genome.clone()
-    child.fitness = None  # child must be re-evaluated
+    child.fitness = None
 
-    if rng.random() < mutation_rate:
-        child = change_filters(child, search_space, rng=rng)
-    if rng.random() < mutation_rate:
-        child = change_activation(child, search_space, rng=rng)
-    if rng.random() < mutation_rate:
-        child = change_depth(child, search_space, rng=rng)
+    if rng.random() < rate:
+        child = change_filters(child, rng=rng)
+    if rng.random() < rate:
+        child = change_activation(child, allowed_activations=allowed, rng=rng)
 
-    return search_space.clamp(child)
+    return child
 
 
 def change_filters(
     genome: ArchitectureGenome,
-    search_space: SearchSpace,
     rng: Optional[random.Random] = None,
+    min_channels: int = 16,
+    max_channels: int = 512,
 ) -> ArchitectureGenome:
     """
-    Randomly scale one encoder level's filter count by ×0.5, ×1, or ×2.
+    Scale one encoder level's channel count by a random factor.
+
+    Picks a random level 0–4 and multiplies its channel count by one of
+    {0.5, 0.75, 1.25, 1.5}, then clips to [min_channels, max_channels].
 
     Args:
         genome: Source genome.
-        search_space: Used to validate/clamp the result.
         rng: Optional seeded Random instance.
+        min_channels: Lower bound for channel count.
+        max_channels: Upper bound for channel count.
 
     Returns:
-        New genome with one level's filter count mutated.
+        New genome with one level's channel count mutated.
     """
     if rng is None:
         rng = random.Random()
@@ -63,19 +77,18 @@ def change_filters(
     child = genome.clone()
     child.fitness = None
 
-    level = rng.randint(0, child.depth - 1)
-    factor = rng.choice([0.5, 2.0])
-    new_f = max(
-        search_space.min_filters,
-        min(search_space.max_filters, int(child.num_filters[level] * factor)),
-    )
-    child.num_filters[level] = new_f
+    level = rng.randint(0, NUM_LEVELS - 1)
+    factor = rng.choice([0.5, 0.75, 1.25, 1.5])
+    old_ch = float(child.layer_configs[level, _COL_CHANNELS])
+    new_ch = int(round(old_ch * factor))
+    new_ch = max(min_channels, min(max_channels, new_ch))
+    child.layer_configs[level, _COL_CHANNELS] = float(new_ch)
     return child
 
 
 def change_activation(
     genome: ArchitectureGenome,
-    search_space: SearchSpace,
+    allowed_activations: Optional[List[str]] = None,
     rng: Optional[random.Random] = None,
 ) -> ArchitectureGenome:
     """
@@ -83,72 +96,20 @@ def change_activation(
 
     Args:
         genome: Source genome.
-        search_space: Provides the list of allowed activations.
+        allowed_activations: List of valid activation names to choose from.
         rng: Optional seeded Random instance.
 
     Returns:
-        New genome with a different activation function.
+        New genome with a (possibly different) activation function.
     """
     if rng is None:
         rng = random.Random()
+    if allowed_activations is None:
+        allowed_activations = ["relu", "leaky_relu", "elu", "gelu"]
 
     child = genome.clone()
     child.fitness = None
-
-    alternatives = [a for a in search_space.allowed_activations if a != genome.activation]
-    if alternatives:
-        child.activation = rng.choice(alternatives)
-    return child
-
-
-def change_depth(
-    genome: ArchitectureGenome,
-    search_space: SearchSpace,
-    rng: Optional[random.Random] = None,
-) -> ArchitectureGenome:
-    """
-    Add or remove one encoder level (±1 depth), respecting search-space bounds.
-
-    When adding a level: duplicate the last filter count.
-    When removing a level: drop the last encoder level.
-
-    Args:
-        genome: Source genome.
-        search_space: Defines min_depth / max_depth bounds.
-        rng: Optional seeded Random instance.
-
-    Returns:
-        New genome with depth changed by ±1.
-    """
-    if rng is None:
-        rng = random.Random()
-
-    child = genome.clone()
-    child.fitness = None
-
-    can_grow = child.depth < search_space.max_depth
-    can_shrink = child.depth > search_space.min_depth
-
-    if can_grow and can_shrink:
-        grow = rng.random() < 0.5
-    elif can_grow:
-        grow = True
-    elif can_shrink:
-        grow = False
-    else:
-        return child  # stuck at boundary, no-op
-
-    if grow:
-        # Add a new deepest level: duplicate last filter count
-        child.num_filters.append(child.num_filters[-1])
-        child.skip_connections.append(True)
-        child.depth += 1
-    else:
-        # Remove deepest level
-        child.num_filters.pop()
-        child.skip_connections.pop()
-        child.depth -= 1
-
+    child.activation = rng.choice(allowed_activations)
     return child
 
 
@@ -162,14 +123,16 @@ def tournament_select(
 
     Args:
         population: Pool of evaluated genomes (all must have fitness set).
-        tournament_size: Number of contestants.
+        tournament_size: Number of contestants drawn at random.
         rng: Optional seeded Random instance.
 
     Returns:
-        The genome with the highest fitness among the random contestants.
+        The genome with the highest fitness among the contestants.
     """
     if rng is None:
         rng = random.Random()
 
-    contestants = rng.choices(population, k=min(tournament_size, len(population)))
+    contestants = rng.choices(
+        population, k=min(tournament_size, len(population))
+    )
     return max(contestants, key=lambda g: g.fitness or 0.0)
