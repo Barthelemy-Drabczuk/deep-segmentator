@@ -51,6 +51,29 @@ def _dataset_subject_count(raw_dir: Path) -> int | None:
     return len(list(folders[0].glob("*.nii.gz")))
 
 
+def _validate_datalist(datalist_path: Path, work_dir: Path) -> None:
+    """Raise clearly if the first training image in the datalist is inaccessible.
+
+    MONAI's convert_dataset() uses absolute paths from the datalist as-is.
+    If the datalist was prepared with a different --work-dir, paths will be
+    wrong and convert_dataset() will silently swallow the resulting error.
+    """
+    dl = json.loads(datalist_path.read_text())
+    entries = dl.get("training", [])
+    if not entries:
+        raise ValueError(f"No training entries found in {datalist_path}")
+    first_img = entries[0].get("image", "")
+    if not Path(first_img).exists():
+        raise FileNotFoundError(
+            f"Datalist image not accessible: {first_img}\n"
+            f"The datalist at {datalist_path} was likely prepared with a "
+            f"different --work-dir than the current one ({work_dir}).\n"
+            "Fix: re-run the preparation script with matching --work-dir:\n"
+            f"  python scripts/prepare_nnunet_dataset.py "
+            f"--data-root <HCP_ROOT> --work-dir {work_dir}"
+        )
+
+
 @click.command()
 @click.option(
     "--config",
@@ -188,6 +211,11 @@ def main(
     preprocessed_dir = _work_dir / "nnunet_preprocessed"
     results_dir = _work_dir / "nnunet_results"
 
+    # ── Validate datalist paths before touching the runner ─────────────
+    # MONAI's convert_dataset() uses absolute paths from the datalist as-is
+    # and swallows any exception. A path mismatch causes a silent failure.
+    _validate_datalist(effective_datalist, _work_dir)
+
     runner = nnUNetV2Runner(
         input_config=input_config,
         trainer_class_name=trainer_class,
@@ -210,6 +238,16 @@ def main(
         else:
             print("Step 1/3  Converting dataset to nnU-Net format …")
         runner.convert_dataset()
+        # convert_dataset() catches BaseException internally and only logs a
+        # WARNING — check that dataset.json was actually written.
+        if not list(raw_dir.glob("Dataset001_*/dataset.json")):
+            raise RuntimeError(
+                "convert_dataset() failed silently (see WARNING above).\n"
+                "Most common cause: image paths in the datalist are inaccessible.\n"
+                "Re-run the preparation script with matching --work-dir:\n"
+                f"  python scripts/prepare_nnunet_dataset.py "
+                f"--data-root <HCP_ROOT> --work-dir {_work_dir}"
+            )
     else:
         print(
             f"Step 1/3  nnU-Net raw dir exists "
