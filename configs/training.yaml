@@ -1,0 +1,43 @@
+# Phase 1 — nnU-Net v2 training configuration (via MONAI nnUNetV2Runner)
+#
+# Workflow:
+#   1. Prepare data (run once, CPU only):
+#      python scripts/prepare_nnunet_dataset.py \
+#          --data-root /neurospin/dico/data/bv_databases/human/not_labeled/hcp/hcp \
+#          --work-dir  ~/nnunet_work/hcp
+#
+#   2. Train (GPU required):
+#      python scripts/train_monai_nnunet.py --config configs/training.yaml
+
+data:
+  root_dir: /neurospin/dico/data/bv_databases/human/not_labeled/hcp/hcp
+  dataset_name: hcp
+  # work_dir MUST be outside the git repository (large intermediate files).
+  # Override with --work-dir CLI flag if needed.
+  work_dir: ~/nnunet_work/hcp          # output of prepare_nnunet_dataset.py
+
+training:
+  # nnU-Net v2 trainer variant — pick one:
+  #   nnUNetTrainer              → 1000 epochs (full training, best results)
+  #   nnUNetTrainer_250epochs    → 250 epochs  (faster, good for initial experiments)
+  #   nnUNetTrainer_100epochs    → 100 epochs  (quick sanity check)
+  nnunet_trainer: nnUNetTrainer_250epochs
+
+  # nnU-Net configuration (architecture):
+  #   3d_fullres    → full-resolution 3D U-Net (recommended for brain MRI)
+  #   3d_lowres     → low-resolution first pass (only for very large volumes)
+  nnunet_config: 3d_fullres
+
+  # Cross-validation fold (0–4 for 5-fold CV).
+  # Train one fold at a time; rerun with --fold 1 … --fold 4 for full CV.
+  fold: 0
+
+  mixed_precision: true
+  seed: 42
+
+evaluation:
+  checkpoint: ""                # set after training; path to best nnUNet checkpoint
+  output_dir: outputs/evaluation
+  gate_dice_threshold: 0.95     # Phase 1 pass criterion (Dice ≥ 95 %)
+  n_subjects: 500
+  n_arg: 50                     # subjects for ARG file generation

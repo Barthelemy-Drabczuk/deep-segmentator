@@ -4,6 +4,7 @@ from .abide_loader import ABIDELoader
 from .custom_loader import CustomLoader
 from .senior_loader import SENIORLoader
 from .ukbiobank_loader import UKBiobankLoader
+from .hcp_loader import HCPLoader
 
 __all__ = [
     "UKBiobankLoader",
@@ -11,4 +12,5 @@ __all__ = [
     "ABIDELoader",
     "SENIORLoader",
     "CustomLoader",
+    "HCPLoader",
 ]

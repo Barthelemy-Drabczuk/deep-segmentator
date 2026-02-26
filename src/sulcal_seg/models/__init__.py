@@ -1,5 +1,4 @@
 """Sulcal segmentation models."""
-from .builder import ModelBuilder
-from .full_model import SulcalSegmentationModel
+from .monai_nnunet import MONAInnUNetModel
 
-__all__ = ["ModelBuilder", "SulcalSegmentationModel"]
+__all__ = ["MONAInnUNetModel"]

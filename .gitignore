@@ -6,6 +6,7 @@ CLAUDE_DOC/
 # ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
+*.pyc
 *$py.class
 *.pyo
 *.pyd
@@ -71,6 +72,9 @@ data/
 # ── HPO / Optuna ──────────────────────────────────────────────────────────────
 *.db
 optuna_studies/
+
+# ── nnU-Net work dir (safety net for relative paths) ──────────────────────────
+work_dir/
 
 # ── OS / editor ───────────────────────────────────────────────────────────────
 .DS_Store

@@ -14,6 +14,7 @@ from .loaders.abide_loader import ABIDELoader
 from .loaders.custom_loader import CustomLoader
 from .loaders.senior_loader import SENIORLoader
 from .loaders.ukbiobank_loader import UKBiobankLoader
+from .loaders.hcp_loader import HCPLoader
 
 
 class DatasetLoader:
@@ -33,6 +34,7 @@ class DatasetLoader:
         "abide": ABIDELoader,
         "senior": SENIORLoader,
         "custom": CustomLoader,
+        "hcp": HCPLoader,
     }
 
     @staticmethod
@@ -41,7 +43,7 @@ class DatasetLoader:
         Instantiate a dataset loader by name.
 
         Args:
-            dataset_name: One of 'ukbiobank', 'abcd', 'abide', 'senior', 'custom'
+            dataset_name: One of 'ukbiobank', 'abcd', 'abide', 'senior', 'hcp', 'custom'
             **kwargs: Arguments forwarded to the loader constructor (e.g., root_dir, subset)
 
         Returns:
