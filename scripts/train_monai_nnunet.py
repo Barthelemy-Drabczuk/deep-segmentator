@@ -132,6 +132,11 @@ def main(
     print(f"  Fold         : {_fold}")
     print()
 
+    # Capture paths before runner __init__ may mutate input_config
+    raw_dir          = _work_dir / "nnunet_raw"
+    preprocessed_dir = _work_dir / "nnunet_preprocessed"
+    results_dir      = _work_dir / "nnunet_results"
+
     runner = nnUNetV2Runner(
         input_config=input_config,
         trainer_class_name=trainer_class,
@@ -139,7 +144,6 @@ def main(
     )
 
     # ── Convert dataset (idempotent — skipped if raw dir already exists) ──
-    raw_dir = Path(input_config["nnunet_raw"])
     if not raw_dir.exists():
         print("Step 1/3  Converting dataset to nnU-Net format …")
         runner.convert_dataset()
@@ -147,7 +151,6 @@ def main(
         print("Step 1/3  nnU-Net raw dir already exists — skipping conversion.")
 
     # ── Plan & preprocess (idempotent) ─────────────────────────────────
-    preprocessed_dir = Path(input_config["nnunet_preprocessed"])
     if not preprocessed_dir.exists():
         print("Step 2/3  Planning and preprocessing …")
         runner.plan_and_process()
@@ -157,8 +160,6 @@ def main(
     # ── Train single model (fold N, 3d_fullres) ────────────────────────
     print(f"Step 3/3  Training {config_name}, fold {_fold} …")
     runner.train_single_model(config=config_name, fold=_fold)
-
-    results_dir = Path(input_config["nnunet_results"])
     print(f"\nTraining complete. Results saved to: {results_dir}")
     print("To train remaining folds (1–4), rerun with --fold 1, --fold 2, etc.")
 
