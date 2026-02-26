@@ -85,6 +85,7 @@ def main(data_root: str, work_dir: str, n_folds: int) -> None:
     # ── Materialise images (symlinks) and labels (new NIfTIs) ────────
     n_created = 0
     n_skipped = 0
+    skipped_sids: set[str] = set()  # subjects with no readable T1 — excluded from datalist
     for sid, subset in all_sids:
         loader = HCPLoader(root_dir=data_root, subset=subset)
 
@@ -102,6 +103,10 @@ def main(data_root: str, work_dir: str, n_folds: int) -> None:
             else:
                 # Fall back to raw T1 if skull-stripped is missing
                 raw = Path(data_root) / sid / "t1mri" / "BL" / f"{sid}.nii.gz"
+                if not raw.exists():
+                    print(f"  WARNING: no T1 found for {sid} (checked skull-stripped and raw) — skipping")
+                    skipped_sids.add(sid)
+                    continue
                 dst_img.symlink_to(raw)
 
         # Combined L+R grey/white label (created in memory by HCPLoader, saved here)
@@ -114,6 +119,8 @@ def main(data_root: str, work_dir: str, n_folds: int) -> None:
         else:
             n_skipped += 1
 
+    if skipped_sids:
+        print(f"  WARNING: {len(skipped_sids)} subject(s) skipped (no T1 image found)")
     print(f"  Labels created : {n_created}")
     print(f"  Labels skipped (already exist): {n_skipped}")
 
@@ -124,6 +131,8 @@ def main(data_root: str, work_dir: str, n_folds: int) -> None:
     test_entries: list[dict] = []
 
     for i, (sid, subset) in enumerate(all_sids):
+        if sid in skipped_sids:
+            continue
         img_path = str(images_dir / f"{sid}_0000.nii.gz")
         lbl_path = str(labels_dir / f"{sid}.nii.gz")
 

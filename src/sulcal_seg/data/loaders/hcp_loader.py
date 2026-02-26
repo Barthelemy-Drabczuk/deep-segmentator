@@ -6,6 +6,9 @@ import nibabel as nib
 import numpy as np
 
 from ..abstract_loader import AbstractDataLoader
+from sulcal_seg.utils.logging import get_logger
+
+_logger = get_logger(__name__)
 
 
 class HCPLoader(AbstractDataLoader):
@@ -193,6 +196,6 @@ class HCPLoader(AbstractDataLoader):
                 df = pd.read_csv(csv_path, index_col="Subject", dtype=str)
                 df.index = df.index.astype(str)
                 return df
-            except Exception:
-                pass
+            except Exception as exc:
+                _logger.warning(f"Could not load metadata from {csv_path}: {exc}")
         return None

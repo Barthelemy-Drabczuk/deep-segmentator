@@ -104,13 +104,20 @@ class MonaiTrainer:
         #     train_loss = self._train_epoch(epoch)
         #     if epoch % self.val_interval == 0:
         #         val_dice = self._validate(epoch)
+        #         ckpt_state = {
+        #             "epoch": epoch,
+        #             "model_state_dict": self.model.state_dict(),
+        #             "optimizer_state_dict": self.optimizer.state_dict(),
+        #             "metrics": {"val_dice": val_dice},
+        #         }
+        #         self.checkpoint_manager.save(
+        #             ckpt_state,
+        #             f"checkpoint_epoch_{epoch:04d}.pt",
+        #         )
         #         if val_dice > self.best_val_dice:
         #             self.best_val_dice = val_dice
         #             self.best_epoch = epoch
-        #             self.checkpoint_manager.save(
-        #                 self.model, self.optimizer, epoch,
-        #                 {"val_dice": val_dice},
-        #             )
+        #             self.checkpoint_manager.save(ckpt_state, "best_model.pt")
         #     self._log_scalars(epoch, train_loss=train_loss, val_dice=val_dice)
         # self._writer.close()
         # return {"best_val_dice": self.best_val_dice, "best_epoch": self.best_epoch}
@@ -126,13 +133,15 @@ class MonaiTrainer:
         Returns:
             The epoch number of the loaded checkpoint.
         """
-        path = self.checkpoint_manager.get_latest()
+        path = self.checkpoint_manager.get_best() or self.checkpoint_manager.get_latest()
         if path is None:
             raise FileNotFoundError(
                 f"No checkpoints found in {self.checkpoint_manager.checkpoint_dir}"
             )
-        epoch = self.checkpoint_manager.load(self.model, self.optimizer, path)
-        return epoch
+        state = self.checkpoint_manager.load(path)
+        self.model.load_state_dict(state["model_state_dict"])
+        self.optimizer.load_state_dict(state["optimizer_state_dict"])
+        return state.get("epoch", 0)
 
     # ------------------------------------------------------------------
     # Internal helpers
