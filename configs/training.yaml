@@ -15,6 +15,10 @@ data:
   # work_dir MUST be outside the git repository (large intermediate files).
   # Override with --work-dir CLI flag if needed.
   work_dir: ~/nnunet_work/hcp          # output of prepare_nnunet_dataset.py
+  # Limit to the first N training subjects (null = use all).
+  # Override with --max-subjects CLI flag. Useful for quick sanity checks;
+  # increasing the count triggers automatic re-conversion and preprocessing.
+  max_subjects: null
 
 training:
   # nnU-Net v2 trainer variant — pick one:
@@ -31,6 +35,12 @@ training:
   # Cross-validation fold (0–4 for 5-fold CV).
   # Train one fold at a time; rerun with --fold 1 … --fold 4 for full CV.
   fold: 0
+
+  # ResidualEncoderUNet planner (recommended over old nnUNetPlans default).
+  # ResEncUNetPlanner targets ~8 GB GPU; use the same value for any VRAM size
+  # since nnU-Net auto-scales patch size to the available memory.
+  nnunet_planner: ResEncUNetPlanner
+  nnunet_plans:   nnUNetResEncUNetPlans
 
   mixed_precision: true
   seed: 42

@@ -1,4 +1,4 @@
-# Sulcal Segmentation — deep_segmentor
+# Sulcal Segmentation — deep_segmentator
 
 Lifespan-robust cortical sulcal segmentation using nnU-Net v2 — self-configuring
 3-D U-Net trained on HCP, target Dice ≥ 95 %.
@@ -13,8 +13,8 @@ Lifespan-robust cortical sulcal segmentation using nnU-Net v2 — self-configuri
 Requires [pixi](https://pixi.sh) (recommended) or a manual conda/pip environment.
 
 ```bash
-git clone <repo-url> deep_segmentor
-cd deep_segmentor
+git clone <repo-url> deep_segmentator
+cd deep_segmentator
 pixi install
 ```
 
@@ -218,7 +218,7 @@ pixi run format           # auto-format with black + ruff --fix
 ## Project structure
 
 ```
-deep_segmentor/
+deep_segmentator/
 ├── configs/
 │   ├── training.yaml              # nnU-Net training config (data, training, evaluation)
 │   └── default.yaml               # baseline defaults
