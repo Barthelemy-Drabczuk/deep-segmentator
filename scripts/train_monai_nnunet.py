@@ -65,6 +65,17 @@ def _validate_dataset_json(raw_dir: Path) -> bool:
     return all(isinstance(v, str) for v in ds.get("channel_names", {}).values())
 
 
+def _validate_plans_file(preprocessed_dir: Path, plans_name: str) -> bool:
+    """Return True iff the expected <plans_name>.json exists in nnunet_preprocessed.
+
+    plan_and_process() has overwrite_plans_name="nnUNetPlans" as a hardcoded
+    default, which silently overrides ResEncUNetPlanner's own identifier.
+    Passing overwrite_plans_name=plans_name fixes this, but any run done before
+    that fix will have the wrong file. Returning False triggers re-preprocessing.
+    """
+    return bool(list(preprocessed_dir.glob(f"Dataset001_*/{plans_name}.json")))
+
+
 def _validate_datalist(datalist_path: Path, work_dir: Path) -> None:
     """Raise clearly if the first training image in the datalist is inaccessible.
 
@@ -271,9 +282,21 @@ def main(
         )
 
     # ── Plan & preprocess ───────────────────────────────────────────────
-    if not any(preprocessed_dir.glob("Dataset001_*")):
-        print("Step 2/3  Planning and preprocessing …")
-        runner.plan_and_process(pl=planner_name)
+    # plan_and_process() has overwrite_plans_name="nnUNetPlans" hardcoded by
+    # default, which overrides ResEncUNetPlanner's own identifier.  We must
+    # pass overwrite_plans_name=plans_name explicitly to get the right file.
+    _plans_ok = not plans_name or _validate_plans_file(preprocessed_dir, plans_name)
+    if not any(preprocessed_dir.glob("Dataset001_*")) or not _plans_ok:
+        if not _plans_ok and any(preprocessed_dir.glob("Dataset001_*")):
+            print("Step 2/3  Plans file missing or wrong name — re-preprocessing …")
+            for d in preprocessed_dir.glob("Dataset001_*"):
+                shutil.rmtree(d)
+        else:
+            print("Step 2/3  Planning and preprocessing …")
+        pp_kwargs: dict = {"pl": planner_name}
+        if plans_name:
+            pp_kwargs["overwrite_plans_name"] = plans_name
+        runner.plan_and_process(**pp_kwargs)
     else:
         print("Step 2/3  Preprocessed dir already exists — skipping.")
 
