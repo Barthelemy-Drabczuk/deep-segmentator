@@ -51,6 +51,20 @@ def _dataset_subject_count(raw_dir: Path) -> int | None:
     return len(list(folders[0].glob("*.nii.gz")))
 
 
+def _validate_dataset_json(raw_dir: Path) -> bool:
+    """Return True iff Dataset001_*/dataset.json has string-valued channel_names.
+
+    A dict-valued channel_names (e.g. {"0": {"0": "MRI"}}) was written when
+    input_config["modality"] was incorrectly set to a dict.  Returning False
+    triggers automatic re-conversion with the correct modality string.
+    """
+    candidates = list(raw_dir.glob("Dataset001_*/dataset.json"))
+    if not candidates:
+        return False
+    ds = json.loads(candidates[0].read_text())
+    return all(isinstance(v, str) for v in ds.get("channel_names", {}).values())
+
+
 def _validate_datalist(datalist_path: Path, work_dir: Path) -> None:
     """Raise clearly if the first training image in the datalist is inaccessible.
 
@@ -198,7 +212,7 @@ def main(
     # and nnunet_results/ as empty directories on instantiation. We must NOT
     # rely on parent-dir existence for skip logic — use Dataset001_* glob instead.
     input_config = {
-        "modality":            {"0": "MRI"},      # single T1 channel
+        "modality":            "MRI",             # single T1 channel
         "datalist":            str(effective_datalist),
         "dataroot":            str(_work_dir),
         "nnunet_raw":          str(_work_dir / "nnunet_raw"),
@@ -222,15 +236,17 @@ def main(
         work_dir=str(_work_dir / "runner_work"),
     )
 
-    # ── Convert dataset (with subject-count cache invalidation) ────────
+    # ── Convert dataset (with subject-count / format cache invalidation) ─
     existing_count = _dataset_subject_count(raw_dir)
+    dataset_json_ok = _validate_dataset_json(raw_dir)
 
-    if existing_count != n_train:
+    if existing_count != n_train or not dataset_json_ok:
         if existing_count is not None:
-            print(
-                f"Step 1/3  Subject count changed "
-                f"({existing_count} → {n_train}). Reconverting …"
-            )
+            if existing_count != n_train:
+                reason = f"subject count changed ({existing_count} → {n_train})"
+            else:
+                reason = "dataset.json has wrong channel_names format"
+            print(f"Step 1/3  {reason.capitalize()} — reconverting …")
             for d in raw_dir.glob("Dataset001_*"):
                 shutil.rmtree(d)
             for d in preprocessed_dir.glob("Dataset001_*"):
