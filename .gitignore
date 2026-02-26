@@ -2,6 +2,7 @@
 .mcp.json
 .claude/
 CLAUDE_DOC/
+CLAUDE.md
 
 # ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
@@ -59,7 +60,6 @@ results/
 logs/
 
 # ── Data (never commit raw MRI data) ──────────────────────────────────────────
-data/
 *.nii
 *.nii.gz
 *.mgz
