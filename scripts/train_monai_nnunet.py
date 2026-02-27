@@ -29,6 +29,7 @@ Expected outcome (Phase 1 gate):
 """
 from __future__ import annotations
 
+import fcntl
 import json
 import shutil
 import sys
@@ -99,6 +100,43 @@ def _validate_datalist(datalist_path: Path, work_dir: Path) -> None:
         )
 
 
+def _acquire_lock(work_dir: Path):
+    """Exclusive flock on <work_dir>/.train.lock — prevents concurrent runs.
+
+    The lock is released automatically when the process exits (including crashes),
+    so no manual cleanup is needed under normal circumstances.
+    """
+    lock_path = work_dir / ".train.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    f = open(lock_path, "w")
+    try:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        raise RuntimeError(
+            f"Another training instance is already running (lock: {lock_path}).\n"
+            "If no other instance is running, delete the lock file and retry:\n"
+            f"  rm {lock_path}"
+        )
+    return f  # caller must keep reference alive for lock to hold
+
+
+def _preprocessing_complete(preprocessed_dir: Path, n_expected: int) -> bool:
+    """Return True iff every config subdir under Dataset001_* has n_expected .pkl files.
+
+    nnU-Net writes one .pkl properties file per subject per config. Counting
+    them detects interrupted preprocessing (e.g. from concurrent script runs
+    corrupting blosc2 files on NFS).
+    """
+    for dataset_dir in preprocessed_dir.glob("Dataset001_*"):
+        for config_dir in dataset_dir.iterdir():
+            if not config_dir.is_dir():
+                continue
+            n_pkl = len(list(config_dir.glob("*.pkl")))
+            if 0 < n_pkl < n_expected:
+                return False  # partially written
+    return True
+
+
 @click.command()
 @click.option(
     "--config",
@@ -132,12 +170,21 @@ def _validate_datalist(datalist_path: Path, work_dir: Path) -> None:
          "Override data.max_subjects from config. If the cached dataset has a "
          "different subject count it is automatically rebuilt.",
 )
+@click.option(
+    "--preprocess-workers",
+    default=4,
+    type=int,
+    show_default=True,
+    help="Parallel workers for nnU-Net preprocessing. "
+         "Reduce to 1–2 on NFS to avoid blosc2 write conflicts.",
+)
 def main(
     config_path: str,
     data_root: str | None,
     work_dir: str | None,
     fold: int | None,
     max_subjects: int | None,
+    preprocess_workers: int,
 ) -> None:
     """Train nnU-Net v2 on HCP sulcal segmentation data via MONAI nnUNetV2Runner."""
     # ── Load config ────────────────────────────────────────────────────
@@ -161,6 +208,9 @@ def main(
     _work_dir = Path(
         data_cfg.get("work_dir", _DEFAULT_WORK_DIR)
     ).expanduser().resolve()
+
+    # ── Prevent concurrent runs (blosc2 has no file locking on NFS) ────
+    _lock_file = _acquire_lock(_work_dir)
 
     # ── Deferred imports (so --help works without GPU / MONAI) ─────────
     import torch
@@ -286,19 +336,34 @@ def main(
     # default, which overrides ResEncUNetPlanner's own identifier.  We must
     # pass overwrite_plans_name=plans_name explicitly to get the right file.
     _plans_ok = not plans_name or _validate_plans_file(preprocessed_dir, plans_name)
-    if not any(preprocessed_dir.glob("Dataset001_*")) or not _plans_ok:
-        if not _plans_ok and any(preprocessed_dir.glob("Dataset001_*")):
+    _pp_complete = _preprocessing_complete(preprocessed_dir, n_train)
+    _pp_exists = any(preprocessed_dir.glob("Dataset001_*"))
+
+    if not _pp_exists or not _plans_ok or not _pp_complete:
+        if not _pp_complete and _pp_exists:
+            print("Step 2/3  Preprocessing incomplete (interrupted run?) — "
+                  "deleting partial config dirs and re-preprocessing …")
+            for dataset_dir in preprocessed_dir.glob("Dataset001_*"):
+                for config_dir in dataset_dir.iterdir():
+                    if config_dir.is_dir():
+                        n_pkl = len(list(config_dir.glob("*.pkl")))
+                        if 0 < n_pkl < n_train:
+                            shutil.rmtree(config_dir)
+        elif not _plans_ok and _pp_exists:
             print("Step 2/3  Plans file missing or wrong name — re-preprocessing …")
             for d in preprocessed_dir.glob("Dataset001_*"):
                 shutil.rmtree(d)
         else:
             print("Step 2/3  Planning and preprocessing …")
-        pp_kwargs: dict = {"pl": planner_name}
+        pp_kwargs: dict = {
+            "pl": planner_name,
+            "n_proc": (preprocess_workers, preprocess_workers, preprocess_workers),
+        }
         if plans_name:
             pp_kwargs["overwrite_plans_name"] = plans_name
         runner.plan_and_process(**pp_kwargs)
     else:
-        print("Step 2/3  Preprocessed dir already exists — skipping.")
+        print("Step 2/3  Preprocessed dir already exists and complete — skipping.")
 
     # ── Train single model (fold N, 3d_fullres) ────────────────────────
     print(f"Step 3/3  Training {config_name}, fold {_fold} …")

@@ -3,7 +3,7 @@ name = "sulcal-segmentation"
 version = "1.0.0"
 description = "Lifespan-robust sulcal segmentation via nnU-Net v2"
 authors = ["Barthélémy Drabczuk <barthelemy.drabczuk@cea.fr>"]
-channels = ["conda-forge", "pytorch", "nvidia"]
+channels = ["https://brainvisa.info/neuro-forge", "pytorch", "nvidia", "conda-forge"]
 platforms = ["linux-64"]
 
 [dependencies]
@@ -30,6 +30,7 @@ mypy = ">=1.4"
 pytest = ">=7.4"
 pytest-cov = ">=4.1"
 pytest-xdist = ">=3.3"
+h5py = ">=3.9"
 
 [pypi-dependencies]
 sulcal-seg = { path = ".", editable = true }
@@ -37,6 +38,30 @@ loguru = ">=0.7"
 wandb = ">=0.15"
 monai = ">=1.2"
 nnunetv2 = ">=2.2"
+
+# ── Inference environment (includes soma.aims for BrainVISA .arg output) ──────
+# soma-base requires pydantic < 2, which conflicts with the training env.
+# Run inference with: pixi run --environment inference <command>
+[feature.inference.dependencies]
+python = ">=3.8"
+numpy = ">=1.24"
+scipy = ">=1.10"
+nibabel = ">=5.0"
+scikit-image = ">=0.21"
+click = ">=8.1"
+pyyaml = ">=6.0"
+h5py = ">=3.9"
+soma-env = ">=0.0"
+soma = "*"
+libjpeg-turbo = { channel = "conda-forge", version = ">=3.0" }
+
+[feature.inference.pypi-dependencies]
+sulcal-seg = { path = ".", editable = true }
+loguru = ">=0.7"
+
+[environments]
+default   = { solve-group = "default" }
+inference = { features = ["inference"], no-default-feature = true, solve-group = "inference" }
 
 [tasks]
 # Setup
